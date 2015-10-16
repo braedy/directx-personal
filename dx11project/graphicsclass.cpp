@@ -14,6 +14,7 @@ GraphicsClass::GraphicsClass()
 	m_Text = 0;
 	m_ModelList = 0;
 	m_Frustum = 0;
+	m_MultiTexShader = 0;
 }
 
 
@@ -64,22 +65,22 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_Camera->GetViewMatrix(baseViewMatrix);
 
 	//create text
-	m_Text = new TextClass;
-	if (!m_Text) return false;
+	//m_Text = new TextClass;
+	//if (!m_Text) return false;
 
-	//init text obj
-	result = m_Text->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), hwnd, screenWidth, screenHeight, baseViewMatrix);
-	if (!result){
-		MessageBox(hwnd, "Could not initialize the text object.", "Error", MB_OK);
-		return false;
-	}
+	////init text obj
+	//result = m_Text->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), hwnd, screenWidth, screenHeight, baseViewMatrix);
+	//if (!result){
+	//	MessageBox(hwnd, "Could not initialize the text object.", "Error", MB_OK);
+	//	return false;
+	//}
 
 	// create the model object
 	m_Model = new ModelClass;
 	if (!m_Model) return false;
 
 	// initialize model object.
-	result = m_Model->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), "sphere.txt", "lava.tga");
+	result = m_Model->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), "square.txt", "pebbles.tga", "sand.tga");
 	if (!result){
 		MessageBox(hwnd, "Could not initialize the model object.", "Error", MB_OK);
 		return false;
@@ -97,7 +98,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	//}
 
 	// Create the texture shader object.
-	/*m_TextureShader = new TextureShaderClass;
+	m_TextureShader = new TextureShaderClass;
 	if (!m_TextureShader){
 		return false;
 	}
@@ -108,7 +109,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		MessageBox(hwnd, "Could not initialize the texture shader object.", "Error", MB_OK);
 		return false;
 	}
-
+	/*
 	// Create the bitmap object.
 	m_Bitmap = new BitmapClass;
 	if (!m_Bitmap) return false;
@@ -120,6 +121,17 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}*/
 
+	//create multi tex shader object
+	m_MultiTexShader = new MultiTexShaderClass;
+	if (!m_MultiTexShader) return false;
+
+	//init multi tex shader object
+	result = m_MultiTexShader->Initialize(m_D3D->GetDevice(), hwnd);
+	if (!result){
+		MessageBox(hwnd, "Could not initialize the multi tex shader object.", "Error", MB_OK);
+		return false;
+	}
+	/*
 	//create light shader object
 	m_LightShader = new LightShaderClass;
 	if (!m_LightShader) return false;
@@ -155,7 +167,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	//create frustum object
 	m_Frustum = new FrustumClass;
-	if (!m_Frustum) return false;
+	if (!m_Frustum) return false;*/
 
 	return true;
 }
@@ -163,6 +175,13 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 void GraphicsClass::Shutdown()
 {
+	//release the multitexture shader
+	if (m_MultiTexShader){
+		m_MultiTexShader->Shutdown();
+		delete m_MultiTexShader;
+		m_MultiTexShader = 0;
+	}
+
 	//release frustum object
 	if (m_Frustum){
 		delete m_Frustum;
@@ -261,12 +280,12 @@ bool GraphicsClass::Frame(float rotationY)//int mouseX, int mouseY, int fps, int
 	//if (rotation > 360.0f) rotation -= 360.0f;
 
 	// Set the position of the camera.
-	m_Camera->SetPosition(0.0f, 0.0f, -15.0f);
+	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
 
 	// Set the rotation of the camera.
 	m_Camera->SetRotation(0.0f, rotationY, 0.0f);
 
-	m_Light->SetDirection(0.0f, 0.0f, 1.0f);
+	//m_Light->SetDirection(0.0f, 0.0f, 1.0f);
 
 	return true;
 }
@@ -293,7 +312,7 @@ bool GraphicsClass::Render()
 	m_D3D->GetProjectionMatrix(projectionMatrix);
 	m_D3D->GetOrthoMatrix(orthoMatrix);
 
-	//construct frustum;
+	/*//construct frustum;
 	m_Frustum->ConstructFrustum(SCREEN_DEPTH, projectionMatrix, viewMatrix);
 
 	//get no of models
@@ -331,7 +350,7 @@ bool GraphicsClass::Render()
 
 	//set the number of models that were actually rendered this frame.
 	result = m_Text->SetRenderCount(renderCount, m_D3D->GetDeviceContext());
-	if (!result) return false;
+	if (!result) return false;*/
 
 	// put model vertex and index buffers on the graphics pipeline to prepare them for drawing
 	//m_Model->Render(m_D3D->GetDeviceContext());
@@ -357,13 +376,13 @@ bool GraphicsClass::Render()
 
 
 	//turn off z buffer (2d)
-	m_D3D->TurnZBufferOff();
+	/*m_D3D->TurnZBufferOff();
 	//turn on alpha
 	m_D3D->TurnAlphaBlendingOn();
 
 	// Render the text strings.
 	result = m_Text->Render(m_D3D->GetDeviceContext(), worldMatrix, orthoMatrix);
-	if (!result) return false;
+	if (!result) return false;*/
 
 	// Put the bitmap vertex and index buffers on the graphics pipeline to prepare them for drawing.
 	//result = m_Bitmap->Render(m_D3D->GetDeviceContext(), 100, 100);
@@ -374,10 +393,17 @@ bool GraphicsClass::Render()
 	//if (!result) return false;
 
 	//Turn off alpha after render
-	m_D3D->TurnAlphaBlendingOff();
+	/*m_D3D->TurnAlphaBlendingOff();
 
 	// Turn the Z buffer back on now that all 2D rendering has completed.
-	m_D3D->TurnZBufferOn();
+	m_D3D->TurnZBufferOn();*/
+
+	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+	m_Model->Render(m_D3D->GetDeviceContext());
+
+	// Render the model using the multitexture shader.
+	m_MultiTexShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+		m_Model->GetTextureArray());
 
 	// present the rendered scene to the screen
 	m_D3D->EndScene();

@@ -5,8 +5,9 @@ ModelClass::ModelClass(){
 	m_vertexBuffer = 0;
 	m_indexBuffer = 0;
 	//tex
-	m_Texture = 0;
+	//m_Texture = 0;
 	m_model = 0;
+	m_TextureArray = 0;
 }
 
 ModelClass::ModelClass(const ModelClass& other){
@@ -15,19 +16,18 @@ ModelClass::ModelClass(const ModelClass& other){
 ModelClass::~ModelClass(){
 }
 
-bool ModelClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* modelFileName, char* textureFilename){
+bool ModelClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* modelFileName, char* textureFilename1, char* textureFilename2){
 	bool result;
 
 	//load model data
 	result = LoadModel(modelFileName);
 	if (!result) return false;
-
 	// initialize vertex and index buffers holding geometry
 	result = InitializeBuffers(device);
 	if (!result){ return false; }
 
 	// Load the texture for this model.
-	result = LoadTexture(device, deviceContext, textureFilename);
+	result = LoadTextureArray(device, deviceContext, textureFilename1, textureFilename2);
 	if (!result) return false;
 
 	return true;
@@ -35,7 +35,7 @@ bool ModelClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 
 void ModelClass::Shutdown(){
 	// Release the model texture.
-	ReleaseTexture();
+	ReleaseTextures();
 	// relesase vertex and index buffers
 	ShutdownBuffers();
 	// release model
@@ -52,9 +52,12 @@ int ModelClass::GetIndexCount(){
 	return m_indexCount;
 }
 
-ID3D11ShaderResourceView* ModelClass::GetTexture()
-{
-	return m_Texture->GetTexture();
+ID3D11ShaderResourceView** ModelClass::GetTextureArray(){
+	return m_TextureArray->GetTextureArray();
+}
+
+ID3D11ShaderResourceView* ModelClass::GetTexture(){
+	return m_TextureArray->GetTexture();
 }
 
 bool ModelClass::InitializeBuffers(ID3D11Device* device){
@@ -78,7 +81,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device){
 	{
 		vertices[i].position = XMFLOAT3(m_model[i].x, m_model[i].y, m_model[i].z);
 		vertices[i].texture = XMFLOAT2(m_model[i].tu, m_model[i].tv);
-		vertices[i].normal = XMFLOAT3(m_model[i].nx, m_model[i].ny, m_model[i].nz);
+		//vertices[i].normal = XMFLOAT3(m_model[i].nx, m_model[i].ny, m_model[i].nz);
 
 		indices[i] = i;
 	}
@@ -215,12 +218,32 @@ bool ModelClass::LoadTexture(ID3D11Device* device, ID3D11DeviceContext* deviceCo
 	return true;
 }
 
-void ModelClass::ReleaseTexture(){
+bool ModelClass::LoadTextureArray(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* filename1, char* filename2){
+	bool result;
+
+	// Create the texture object.
+	m_TextureArray = new TextureArrayClass;
+	if (!m_TextureArray) return false;
+
+	// Initialize the texture object.
+	result = m_TextureArray->Initialize(device, deviceContext, filename1, filename2);
+	if (!result) return false;
+
+	return true;
+}
+
+void ModelClass::ReleaseTextures(){
 	// Release the texture object.
 	if (m_Texture){
 		m_Texture->Shutdown();
 		delete m_Texture;
 		m_Texture = 0;
+	}
+
+	if (m_TextureArray){
+		m_TextureArray->Shutdown();
+		delete m_TextureArray;
+		m_TextureArray = 0;
 	}
 }
 

@@ -34,11 +34,11 @@ bool MultiTexShaderClass::Render(
 	XMMATRIX &worldMatrix,
 	XMMATRIX &viewMatrix,
 	XMMATRIX &projectionMatrix,
-	ID3D11ShaderResourceView** textureArray){
+	ID3D11ShaderResourceView** texture){
 	bool result;
 	
 	// set shader params for rendering
-	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, textureArray);
+	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture);
 	if (!result) return false;
 
 	// render prepped buffers
@@ -52,10 +52,11 @@ bool MultiTexShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHA
 	ID3D10Blob* errorMessage;
 	ID3D10Blob* vertexShaderBuffer;
 	ID3D10Blob* pixelShaderBuffer;
+
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
 	unsigned int numElements;
-	D3D11_BUFFER_DESC matrixBufferDesc;
 	D3D11_SAMPLER_DESC samplerDesc;
+	D3D11_BUFFER_DESC matrixBufferDesc;
 
 	// init pointers
 	errorMessage = 0;
@@ -89,7 +90,7 @@ bool MultiTexShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHA
 	}
 
 	// create vertex shader
-		result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
+	result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
 	if (FAILED(result)) return false;
 
 	//create pixel shader
@@ -141,7 +142,7 @@ bool MultiTexShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHA
 	if (FAILED(result)) return false;
 
 	// Create a texture sampler state description.
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -195,98 +196,97 @@ void MultiTexShaderClass::ShutdownShader()
 	}
 }
 
-void MultiTexShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename){
+void MultiTexShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename)
+{
 	char* compileErrors;
-	unsigned long bufferSize, i;
+	unsigned long long bufferSize, i;
 	ofstream fout;
 
-	//pointer to error message text buffer
+
+	// Get a pointer to the error message text buffer.
 	compileErrors = (char*)(errorMessage->GetBufferPointer());
-	//get length of message
+
+	// Get the length of the message.
 	bufferSize = errorMessage->GetBufferSize();
-	//open file to write to
+
+	// Open a file to write the error message to.
 	fout.open("shader-error.txt");
-	//write out error
-	for (i = 0; i < bufferSize; i++){
+
+	// Write out the error message.
+	for (i = 0; i<bufferSize; i++)
+	{
 		fout << compileErrors[i];
 	}
-	//close file
+
+	// Close the file.
 	fout.close();
 
-	//release
+	// Release the error message.
 	errorMessage->Release();
 	errorMessage = 0;
 
 	// Pop a message up on the screen to notify the user to check the text file for compile errors.
 	MessageBox(hwnd, "Error compiling shader.  Check shader-error.txt for message.", (char*)shaderFilename, MB_OK);
+
 }
 
 bool MultiTexShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX &worldMatrix, XMMATRIX &viewMatrix,
-	XMMATRIX &projectionMatrix, ID3D11ShaderResourceView** textureArray){
-
+	XMMATRIX &projectionMatrix, ID3D11ShaderResourceView** texture)
+{
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBufferType* dataPtr;
 	unsigned int bufferNumber;
 
-	// Lock the matrix buffer so it can be written to.
-	result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))	return false;
-
-	// Get a pointer to the data in the matrix buffer.
-	dataPtr = (MatrixBufferType*)mappedResource.pData;
 
 	// Transpose the matrices to prepare them for the shader.
-	__declspec(align(16)) XMMATRIX temp_world = worldMatrix;
-	temp_world = XMMatrixTranspose(temp_world);
-	__declspec(align(16)) XMMATRIX temp_view = viewMatrix;
-	temp_view = XMMatrixTranspose(temp_view);
-	__declspec(align(16)) XMMATRIX temp_proj = projectionMatrix;
-	temp_proj = XMMatrixTranspose(temp_proj);
+	worldMatrix = XMMatrixTranspose(worldMatrix);
+	viewMatrix = XMMatrixTranspose(viewMatrix);
+	projectionMatrix = XMMatrixTranspose(projectionMatrix);
 
-	// copy transposed matrices back
-	memcpy(&worldMatrix, &temp_world, sizeof(XMMATRIX));
-	memcpy(&viewMatrix, &temp_view, sizeof(XMMATRIX));
-	memcpy(&projectionMatrix, &temp_proj, sizeof(XMMATRIX));
+	// Lock the constant buffer so it can be written to.
+	result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
 
-	// Copy the matrices into the matrix buffer.
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBufferType*)mappedResource.pData;
+
+	// Copy the matrices into the constant buffer.
 	dataPtr->world = worldMatrix;
 	dataPtr->view = viewMatrix;
 	dataPtr->projection = projectionMatrix;
 
-	// Unlock the matrix buffer.
+	// Unlock the constant buffer.
 	deviceContext->Unmap(m_matrixBuffer, 0);
 
-	// Set the position of the matrix buffer in the vertex shader.
+	// Set the position of the constant buffer in the vertex shader.
 	bufferNumber = 0;
 
-	// Finanly set the matrix buffer in the vertex shader with the updated values.
+	// Finanly set the constant buffer in the vertex shader with the updated values.
 	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
+	//The SetShaderParameters function has been modified from the previous tutorial to include setting the texture in the pixel shader now.
 
-	// Set shader texture array resource in the pixel shader.
-	deviceContext->PSSetShaderResources(0, 2, textureArray);
-
-	// Transpose the matrices back to avoid clashes in transposition processing.
-	temp_world = XMMatrixTranspose(temp_world);
-	temp_view = XMMatrixTranspose(temp_view);
-	temp_proj = XMMatrixTranspose(temp_proj);
-
-	// copy transposed matrices back
-	memcpy(&worldMatrix, &temp_world, sizeof(XMMATRIX));
-	memcpy(&viewMatrix, &temp_view, sizeof(XMMATRIX));
-	memcpy(&projectionMatrix, &temp_proj, sizeof(XMMATRIX));
+	// Set shader texture resource in the pixel shader.
+	deviceContext->PSSetShaderResources(0, 2, texture);
 
 	return true;
 }
 
-void MultiTexShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount){
-	// set the vertex input layout
+void MultiTexShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+{
+	// Set the vertex input layout.
 	deviceContext->IASetInputLayout(m_layout);
-	// set shaders
+
+	// Set the vertex and pixel shaders that will be used to render this triangle.
 	deviceContext->VSSetShader(m_vertexShader, NULL, 0);
 	deviceContext->PSSetShader(m_pixelShader, NULL, 0);
-	// set sampler state in ps
+
+	// Set the sampler state in the pixel shader.
 	deviceContext->PSSetSamplers(0, 1, &m_sampleState);
-	// render
+
+	// Render the triangle.
 	deviceContext->DrawIndexed(indexCount, 0, 0);
 }
