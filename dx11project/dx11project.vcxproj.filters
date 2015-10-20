@@ -90,6 +90,12 @@
     <ClCompile Include="texturearrayclass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="projectionshaderclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="viewpointclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="systemclass.h">
@@ -161,6 +167,12 @@
     <ClInclude Include="texturearrayclass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="projectionshaderclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="viewpointclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="PixelShader.hlsl">
@@ -191,6 +203,12 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="multitex_pix.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="projection_vert.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="projection_pix.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

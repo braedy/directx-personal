@@ -19,7 +19,7 @@ class ModelClass{
 	struct VertexType{
 		XMFLOAT3 position;
 		XMFLOAT2 texture;
-		//XMFLOAT3 normal;
+		XMFLOAT3 normal;
 		//XMFLOAT4 color;
 	};
 
@@ -51,6 +51,7 @@ public:
 	ModelClass(const ModelClass&);
 	~ModelClass();
 	bool Initialize(ID3D11Device*, ID3D11DeviceContext*, char*, char*, char*);
+	bool Initialize(ID3D11Device*, ID3D11DeviceContext*, char*, char*);
 	void Shutdown();
 	void Render(ID3D11DeviceContext*);
 

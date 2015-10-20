@@ -85,12 +85,14 @@
     <ClCompile Include="modellistclass.cpp" />
     <ClCompile Include="multitexshaderclass.cpp" />
     <ClCompile Include="positionclass.cpp" />
+    <ClCompile Include="projectionshaderclass.cpp" />
     <ClCompile Include="textclass.cpp" />
     <ClCompile Include="texturearrayclass.cpp" />
     <ClCompile Include="textureclass.cpp" />
     <ClCompile Include="textureshaderclass.cpp" />
     <ClCompile Include="systemclass.cpp" />
     <ClCompile Include="timerclass.cpp" />
+    <ClCompile Include="viewpointclass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bitmapclass.h" />
@@ -108,6 +110,7 @@
     <ClInclude Include="modellistclass.h" />
     <ClInclude Include="multitexshaderclass.h" />
     <ClInclude Include="positionclass.h" />
+    <ClInclude Include="projectionshaderclass.h" />
     <ClInclude Include="textclass.h" />
     <ClInclude Include="texturearrayclass.h" />
     <ClInclude Include="textureclass.h" />
@@ -116,6 +119,7 @@
     <ClInclude Include="inputclass.h" />
     <ClInclude Include="systemclass.h" />
     <ClInclude Include="timerclass.h" />
+    <ClInclude Include="viewpointclass.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="font_vert.hlsl">
@@ -151,6 +155,16 @@
     <FxCompile Include="font_pix.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="projection_pix.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="projection_vert.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="texture_pix.hlsl">
