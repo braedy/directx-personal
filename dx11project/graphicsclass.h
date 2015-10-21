@@ -14,7 +14,8 @@
 //#include "modellistclass.h"
 //#include "frustumclass.h"
 //#include "multitexshaderclass.h"
-#include "projectionshaderclass.h"
+//#include "projectionshaderclass.h"
+#include "projectionlightmapshaderclass.h"
 #include "textureclass.h"
 #include "viewpointclass.h"
 
@@ -38,7 +39,8 @@ class GraphicsClass
 	//ModelListClass* m_ModelList;
 	//FrustumClass* m_Frustum;
 	//MultiTexShaderClass* m_MultiTexShader;
-	ProjectionShaderClass* m_ProjectionShader;
+	//ProjectionShaderClass* m_ProjectionShader;
+	ProjectionLightMapShaderClass* m_ProjectionLightMapShader;
 	TextureClass* m_ProjectionTexture;
 	ViewPointClass* m_ViewPoint;
 

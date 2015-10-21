@@ -16,7 +16,7 @@ GraphicsClass::GraphicsClass()
 	//m_ModelList = 0;
 	//m_Frustum = 0;
 	//m_MultiTexShader = 0;
-	m_ProjectionShader = 0;
+	m_ProjectionLightMapShader = 0;
 	m_ProjectionTexture = 0;
 	m_ViewPoint = 0;
 }
@@ -83,7 +83,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_GroundModel = new ModelClass;
 	if (!m_GroundModel) return false;
 	//init ground
-	result = m_GroundModel->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), "floor.txt", "ivy.tga");
+	result = m_GroundModel->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), "floor.txt", "concrete.tga");
 	if (!result){
 		MessageBox(hwnd, "Could not initialize the ground model object.", "Error", MB_OK);
 		return false;
@@ -93,12 +93,12 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_CubeModel = new ModelClass;
 	if (!m_CubeModel) return false;
 	//init cube
-	result = m_CubeModel->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), "cube.txt", "lava.tga");
+	result = m_CubeModel->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), "head.txt", "sand.tga");
 	if (!result){
 		MessageBox(hwnd, "Could not initialize the cube model object.", "Error", MB_OK);
 		return false;
 	}
-
+	
 	// create the model object
 	//m_Model = new ModelClass;
 	//if (!m_Model) return false;
@@ -174,7 +174,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	//init light object
 	m_Light->SetAmbientColour(0.15f, 0.15f, 0.15f, 1.0f);
 	m_Light->SetDiffuseColour(1.0f, 1.0f, 1.0f, 1.0f);
-	m_Light->SetDirection(0.0f, -0.75f, 0.5f);
+	m_Light->SetPosition(2.0f, 5.0f, -2.0f);
+	//m_Light->SetDirection(0.0f, -0.75f, 0.5f);
 	//m_Light->SetSpecularColour(1.0f, 1.0f, 1.0f, 1.0f);
 	//m_Light->SetSpecularPower(32.0f);
 
@@ -194,11 +195,22 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	//if (!m_Frustum) return false;
 
 	//create projection shader object
-	m_ProjectionShader = new ProjectionShaderClass;
-	if (!m_ProjectionShader) return false;
+	//m_ProjectionShader = new ProjectionShaderClass;
+	//if (!m_ProjectionShader) return false;
+
+	////init projection shader object
+	//result = m_ProjectionShader->Initialize(m_D3D->GetDevice(), hwnd);
+	//if (!result){
+	//	MessageBox(hwnd, "Could not initialize the projection shader object.", "Error", MB_OK);
+	//	return false;
+	//}
+
+	//create projection light map shader object
+	m_ProjectionLightMapShader = new ProjectionLightMapShaderClass;
+	if (!m_ProjectionLightMapShader) return false;
 
 	//init projection shader object
-	result = m_ProjectionShader->Initialize(m_D3D->GetDevice(), hwnd);
+	result = m_ProjectionLightMapShader->Initialize(m_D3D->GetDevice(), hwnd);
 	if (!result){
 		MessageBox(hwnd, "Could not initialize the projection shader object.", "Error", MB_OK);
 		return false;
@@ -209,7 +221,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	if (!m_ProjectionTexture) return false;
 
 	//init projection texture object
-	result = m_ProjectionTexture->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), "dx.tga");
+	result = m_ProjectionTexture->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), "grate.tga");
 	if (!result){
 		MessageBox(hwnd, "Could not initialize the projection texture object.", "Error", MB_OK);
 		return false;
@@ -220,7 +232,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	if (!m_ViewPoint) return false;
 	
 	// Initialize the view point object.
-	m_ViewPoint->SetPosition(2.0f, 5.0f, -2.0f);
+	m_ViewPoint->SetPosition(-0.5f, 6.0f, -3.0f);
 	m_ViewPoint->SetLookAt(0.0f, 0.0f, 0.0f);
 	m_ViewPoint->SetProjectionParameters((float)(XM_PI / 2.0f), 1.0f, 0.1f, 100.0f);
 	m_ViewPoint->GenerateViewMatrix();
@@ -245,10 +257,10 @@ void GraphicsClass::Shutdown(){
 	}
 
 	//release projection shader object
-	if (m_ProjectionShader){
-		m_ProjectionShader->Shutdown();
-		delete m_ProjectionShader;
-		m_ProjectionShader = 0;
+	if (m_ProjectionLightMapShader){
+		m_ProjectionLightMapShader->Shutdown();
+		delete m_ProjectionLightMapShader;
+		m_ProjectionLightMapShader = 0;
 	}
 
 	//release cube model
@@ -413,7 +425,7 @@ bool GraphicsClass::Render()
 	// render ground model with projection shader
 	m_GroundModel->Render(m_D3D->GetDeviceContext());
 
-	result = m_ProjectionShader->Render(
+	result = m_ProjectionLightMapShader->Render(
 		m_D3D->GetDeviceContext(),
 		m_GroundModel->GetIndexCount(), 
 		worldMatrix, 
@@ -422,7 +434,7 @@ bool GraphicsClass::Render()
 		m_GroundModel->GetTexture(), 
 		m_Light->GetAmbientColour(),
 		m_Light->GetDiffuseColour(),
-		m_Light->GetDirection(),
+		m_Light->GetPosition(),
 		projTexViewMatrix,
 		projTexProjectionMatrix,
 		m_ProjectionTexture->GetTexture());
@@ -430,11 +442,12 @@ bool GraphicsClass::Render()
 
 	//reset world matrix and setup translation for cube model
 	m_D3D->GetWorldMatrix(worldMatrix);
-	worldMatrix = XMMatrixTranslation(0.0f, 2.0f, 0.0f);
+	//worldMatrix = XMMatrixTranslation(0.0f, 2.0f, 0.0f);
+	worldMatrix = XMMatrixScaling(0.011, 0.011, 0.011) * XMMatrixTranslation(0.0f, 2.0f, -1.25f);
 
 	//render cube model with projection shader
 	m_CubeModel->Render(m_D3D->GetDeviceContext());
-	result = m_ProjectionShader->Render(
+	result = m_ProjectionLightMapShader->Render(
 		m_D3D->GetDeviceContext(),
 		m_CubeModel->GetIndexCount(),
 		worldMatrix,
@@ -443,7 +456,7 @@ bool GraphicsClass::Render()
 		m_CubeModel->GetTexture(),
 		m_Light->GetAmbientColour(),
 		m_Light->GetDiffuseColour(),
-		m_Light->GetDirection(),
+		m_Light->GetPosition(),
 		projTexViewMatrix,
 		projTexProjectionMatrix,
 		m_ProjectionTexture->GetTexture());

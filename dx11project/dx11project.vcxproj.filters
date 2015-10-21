@@ -96,6 +96,9 @@
     <ClCompile Include="viewpointclass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="projectionlightmapshaderclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="systemclass.h">
@@ -173,6 +176,9 @@
     <ClInclude Include="viewpointclass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="projectionlightmapshaderclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="PixelShader.hlsl">
@@ -209,6 +215,12 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="projection_pix.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="projection_lightmap_vert.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="projection_lightmap_pix.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

@@ -85,6 +85,7 @@
     <ClCompile Include="modellistclass.cpp" />
     <ClCompile Include="multitexshaderclass.cpp" />
     <ClCompile Include="positionclass.cpp" />
+    <ClCompile Include="projectionlightmapshaderclass.cpp" />
     <ClCompile Include="projectionshaderclass.cpp" />
     <ClCompile Include="textclass.cpp" />
     <ClCompile Include="texturearrayclass.cpp" />
@@ -110,6 +111,7 @@
     <ClInclude Include="modellistclass.h" />
     <ClInclude Include="multitexshaderclass.h" />
     <ClInclude Include="positionclass.h" />
+    <ClInclude Include="projectionlightmapshaderclass.h" />
     <ClInclude Include="projectionshaderclass.h" />
     <ClInclude Include="textclass.h" />
     <ClInclude Include="texturearrayclass.h" />
@@ -155,6 +157,16 @@
     <FxCompile Include="font_pix.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="projection_lightmap_pix.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="projection_lightmap_vert.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="projection_pix.hlsl">
