@@ -24,11 +24,13 @@ class D3DClass
 	ID3D11RenderTargetView* m_renderTargetView;
 	ID3D11Texture2D* m_depthStencilBuffer;
 	ID3D11DepthStencilState* m_depthStencilState;
-	ID3D11DepthStencilState* m_depthDisabledStencilState; //2D drawing
 	ID3D11DepthStencilView* m_depthStencilView;
+	ID3D11DepthStencilState* m_depthDisabledStencilState; //2D drawing
 	ID3D11RasterizerState* m_rasterState;
+	ID3D11RasterizerState* m_rasterStateNoCulling;
 	ID3D11BlendState* m_alphaEnableBlendingState;
 	ID3D11BlendState* m_alphaDisableBlendingState;
+	D3D11_VIEWPORT m_viewport;
 
 	XMMATRIX m_projectionMatrix;
 	XMMATRIX m_worldMatrix;
@@ -56,6 +58,12 @@ public:
 
 	void TurnAlphaBlendingOn();
 	void TurnAlphaBlendingOff();
+
+	void TurnOnCulling();
+	void TurnOffCulling();
+
+	void SetBackBufferRenderTarget();
+	void ResetViewport();
 
 	void GetVideoCardInfo(char*, int&);
 };

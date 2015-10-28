@@ -2,22 +2,15 @@
 
 // constructor
 SystemClass::SystemClass(){
-	m_Input = 0;
-	m_Graphics = 0;
-	m_Fps = 0;
-	m_Cpu = 0;
-	m_Timer = 0;
-	m_Position = 0;
+	m_Application = 0;
 }
 
 // keep copy empty instead of compiler making more space than needed
-SystemClass::SystemClass(const SystemClass& other){
-}
+SystemClass::SystemClass(const SystemClass& other){}
 
 // ExitThread() doesnt always call deconstuctors so
 // functionality will go in Shutdown function
-SystemClass::~SystemClass(){
-}
+SystemClass::~SystemClass(){}
 
 bool SystemClass::Initialize(){
 	int screenWidth = 0;
@@ -27,90 +20,21 @@ bool SystemClass::Initialize(){
 	// initialize the Windows API
 	InitializeWindows(screenWidth, screenHeight);
 
-	// create input object to handle keyboard input
-	m_Input = new InputClass;
-	if (!m_Input) return false;
-	// intialize input object
-	m_Input->Initialize(m_hInstance, m_hwnd, screenWidth, screenHeight);
-	if (!result){
-		MessageBox(m_hwnd, "Could not initialize the input object.", "Error", MB_OK);
-		return false;
-	}
+	//create application wrapper
+	m_Application = new ApplicationClass;
+	if (!m_Application) return false;
 
-	// create graphics object to handle graphics
-	m_Graphics = new GraphicsClass;
-	if (!m_Graphics) return false;
-	// initialize graphics object
-	result = m_Graphics->Initialize(screenWidth, screenHeight, m_hwnd);
+	// init application wrapper
+	result = m_Application->Initialize(m_hInstance, m_hwnd, screenWidth, screenHeight);
 	if (!result) return false;
-
-	// create fps object for frame rate checking
-	m_Fps = new FpsClass;
-	if (!m_Fps) return false;
-	// initialize fps object
-	m_Fps->Initialize();
-
-	// create cpu object for process checking
-	m_Cpu = new CpuClass;
-	if (!m_Cpu) return false;
-	// initialize cpu object
-	m_Cpu->Initialize();
-
-	// create timer object
-	m_Timer = new TimerClass;
-	if (!m_Timer) return false;
-	// initialize timer object
-	result = m_Timer->Initialize();
-	if (!result){
-		MessageBox(m_hwnd, "Could not initialize the Timer object.", "Error", MB_OK);
-		return false;
-	}
-
-	//create position object
-	m_Position = new PositionClass;
-	if (!m_Position) return false;
-
-	return true;
 }
 
 void SystemClass::Shutdown(){
-	// release position object
-	if (m_Position){
-		delete m_Position;
-		m_Position = 0;
-	}
-
-	// release timer object
-	if (m_Timer){
-		delete m_Timer;
-		m_Timer = 0;
-	}
-
-	// release cpu object
-	if (m_Cpu){
-		m_Cpu->Shutdown();
-		delete m_Cpu;
-		m_Cpu = 0;
-	}
-
-	// release fps object
-	if (m_Fps){
-		delete m_Fps;
-		m_Fps = 0;
-	}
-	
-	// release graphics object
-	if (m_Graphics){
-		m_Graphics->Shutdown();
-		delete m_Graphics;
-		m_Graphics = 0;
-	}
-
-	// release the input object
-	if (m_Input){
-		m_Input->Shutdown();
-		delete m_Input;
-		m_Input = 0;
+	// release the application wrapper object
+	if (m_Application){
+		m_Application->Shutdown();
+		delete m_Application;
+		m_Application = 0;
 	}
 
 	// shutdown the windows
@@ -141,51 +65,18 @@ void SystemClass::Run(){
 			// process frame
 			result = Frame();
 			if (!result){ 
-				MessageBox(m_hwnd, "Frame Processing Failed", "Error", MB_OK);
+				//MessageBox(m_hwnd, "Frame Processing Failed", "Error", MB_OK);
 				done = true;
 			}
 		}
-
-		//check if user pressed esc to quit
-		if (m_Input->IsEscapePressed()) done = true;
 	}
 }
 
 bool SystemClass::Frame(){
-	bool result, keyDown;
-	int mouseX, mouseY;
-	float rotationY;
-
-	// Update the system stats.
-	m_Timer->Frame();
-	m_Fps->Frame();
-	m_Cpu->Frame();
-
-	// frame processing for input object
-	result = m_Input->Frame();
-	if (!result) return false;
-
-	// get loc of mouse
-	m_Input->GetMouseLocation(mouseX, mouseY);
-	
-	//set frame time
-	m_Position->SetFrameTime(m_Timer->GetTime());
-
-	//check keys
-	keyDown = m_Input->IsLeftArrowPressed();
-	m_Position->TurnLeft(keyDown);
-	keyDown = m_Input->IsRightArrowPressed();
-	m_Position->TurnRight(keyDown);
-
-	//get current view point rotation
-	m_Position->GetRotation(rotationY);
+	bool result;
 
 	// frame processing for graphics object
-	result = m_Graphics->Frame(rotationY);//mouseX, mouseY, m_Fps->GetFps(), m_Cpu->GetCpuPercentage(), m_Timer->GetTime());
-	if (!result) return false;
-
-	// render graphics scene
-	result = m_Graphics->Render();
+	result = m_Application->Frame();
 	if (!result) return false;
 
 	return true;
@@ -276,10 +167,7 @@ void SystemClass::ShutdownWindows()
 	ShowCursor(true);
 
 	// reset display settings
-	if (FULL_SCREEN)
-	{
-		ChangeDisplaySettings(NULL, 0);
-	}
+	if (FULL_SCREEN) ChangeDisplaySettings(NULL, 0);
 
 	// destroy window
 	DestroyWindow(m_hwnd);

@@ -1,8 +1,8 @@
 #include <cstdio>
 #include "d3dclass.h"
 
-D3DClass::D3DClass()
-{
+
+D3DClass::D3DClass(){
 	m_swapChain = 0;
 	m_device = 0;
 	m_deviceContext = 0;
@@ -12,19 +12,15 @@ D3DClass::D3DClass()
 	m_depthDisabledStencilState = 0;
 	m_depthStencilView = 0;
 	m_rasterState = 0;
+	m_rasterStateNoCulling = 0;
 	m_alphaEnableBlendingState = 0;
 	m_alphaDisableBlendingState = 0;
 }
 
+D3DClass::D3DClass(const D3DClass& other){}
 
-D3DClass::D3DClass(const D3DClass& other)
-{
-}
+D3DClass::~D3DClass(){}
 
-
-D3DClass::~D3DClass()
-{
-}
 
 // set up d3d
 bool D3DClass::Initialize(
@@ -53,7 +49,6 @@ bool D3DClass::Initialize(
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;	
 	D3D11_BLEND_DESC blendStateDescription;
 	D3D11_RASTERIZER_DESC rasterDesc;
-	D3D11_VIEWPORT viewport;
 	float fieldOfView, screenAspect;
 
 
@@ -195,12 +190,10 @@ bool D3DClass::Initialize(
 	swapChainDesc.SampleDesc.Quality = 0;
 
 	// set full screen/windowed mode
-	if (fullscreen)
-	{
+	if (fullscreen){
 		swapChainDesc.Windowed = false;
 	}
-	else
-	{
+	else{
 		swapChainDesc.Windowed = true;
 	}
 
@@ -245,17 +238,11 @@ bool D3DClass::Initialize(
 
 	// get pointer to back buffer
 	result = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
-	if (FAILED(result))
-	{
-		return false;
-	}
+	if (FAILED(result))	return false;
 
 	// create render target view with back buffer pointer
 	result = m_device->CreateRenderTargetView(backBufferPtr, NULL, &m_renderTargetView);
-	if (FAILED(result))
-	{
-		return false;
-	}
+	if (FAILED(result))	return false;
 
 	// release pointer to back buffer as we no longer need it
 	backBufferPtr->Release();
@@ -283,10 +270,7 @@ bool D3DClass::Initialize(
 
 	// create texture for depth buffer using description
 	result = m_device->CreateTexture2D(&depthBufferDesc, NULL, &m_depthStencilBuffer);
-	if (FAILED(result))
-	{
-		return false;
-	}
+	if (FAILED(result)) return false;
 
 	// initialize description of stencil state
 	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
@@ -314,10 +298,7 @@ bool D3DClass::Initialize(
 
 	// create depth stencil state
 	result = m_device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState);
-	if (FAILED(result))
-	{
-		return false;
-	}
+	if (FAILED(result))	return false;
 
 	// set depth stencil state
 	m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 1);
@@ -332,10 +313,7 @@ bool D3DClass::Initialize(
 
 	// create the depth stencil view
 	result = m_device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView);
-	if (FAILED(result))
-	{
-		return false;
-	}
+	if (FAILED(result))	return false;
 
 	// bind render target view and depth stencil buffer to the output render pipeline
 	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
@@ -354,24 +332,37 @@ bool D3DClass::Initialize(
 
 	// create rasterizer state from preceding description
 	result = m_device->CreateRasterizerState(&rasterDesc, &m_rasterState);
-	if (FAILED(result))
-	{
-		return false;
-	}
+	if (FAILED(result))	return false;
 
 	// set rasterizer state
 	m_deviceContext->RSSetState(m_rasterState);
 
+	// Setup a raster description which turns off back face culling.
+	rasterDesc.AntialiasedLineEnable = false;
+	rasterDesc.CullMode = D3D11_CULL_NONE;
+	rasterDesc.DepthBias = 0;
+	rasterDesc.DepthBiasClamp = 0.0f;
+	rasterDesc.DepthClipEnable = true;
+	rasterDesc.FillMode = D3D11_FILL_SOLID;
+	rasterDesc.FrontCounterClockwise = false;
+	rasterDesc.MultisampleEnable = false;
+	rasterDesc.ScissorEnable = false;
+	rasterDesc.SlopeScaledDepthBias = 0.0f;
+
+	// Create the no culling rasterizer state.
+	result = m_device->CreateRasterizerState(&rasterDesc, &m_rasterStateNoCulling);
+	if (FAILED(result))	return false;
+
 	// setup viewport for rendering
-	viewport.Width = (float)screenWidth;
-	viewport.Height = (float)screenHeight;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
+	m_viewport.Width = (float)screenWidth;
+	m_viewport.Height = (float)screenHeight;
+	m_viewport.MinDepth = 0.0f;
+	m_viewport.MaxDepth = 1.0f;
+	m_viewport.TopLeftX = 0.0f;
+	m_viewport.TopLeftY = 0.0f;
 
 	// create viewport
-	m_deviceContext->RSSetViewports(1, &viewport);
+	m_deviceContext->RSSetViewports(1, &m_viewport);
 
 	// setup the projection matrix
 	fieldOfView = (float)XM_PI / 4.0f;
@@ -440,73 +431,66 @@ bool D3DClass::Initialize(
 void D3DClass::Shutdown(){
 	// before shutting down, set to windowed mode or on release
 	// the swap chain will throw exception
-	if (m_swapChain)
-	{
+	if (m_swapChain){
 		m_swapChain->SetFullscreenState(false, NULL);
 	}
 
-	if (m_alphaEnableBlendingState)
-	{
+	if (m_alphaEnableBlendingState){
 		m_alphaEnableBlendingState->Release();
 		m_alphaEnableBlendingState = 0;
 	}
 
-	if (m_alphaDisableBlendingState)
-	{
+	if (m_alphaDisableBlendingState){
 		m_alphaDisableBlendingState->Release();
 		m_alphaDisableBlendingState = 0;
 	}
 
-	if (m_rasterState)
-	{
+	if (m_rasterStateNoCulling){
+		m_rasterStateNoCulling->Release();
+		m_rasterStateNoCulling = 0;
+	}
+
+	if (m_rasterState){
 		m_rasterState->Release();
 		m_rasterState = 0;
 	}
 
-	if (m_depthStencilView)
-	{
+	if (m_depthStencilView){
 		m_depthStencilView->Release();
 		m_depthStencilView = 0;
 	}
 
-	if (m_depthStencilState)
-	{
+	if (m_depthStencilState){
 		m_depthStencilState->Release();
 		m_depthStencilState = 0;
 	}
 
-	if (m_depthStencilBuffer)
-	{
+	if (m_depthStencilBuffer){
 		m_depthStencilBuffer->Release();
 		m_depthStencilBuffer = 0;
 	}
 
-	if (m_depthDisabledStencilState)
-	{
+	if (m_depthDisabledStencilState){
 		m_depthDisabledStencilState->Release();
 		m_depthDisabledStencilState = 0;
 	}
 
-	if (m_renderTargetView)
-	{
+	if (m_renderTargetView){
 		m_renderTargetView->Release();
 		m_renderTargetView = 0;
 	}
 
-	if (m_deviceContext)
-	{
+	if (m_deviceContext){
 		m_deviceContext->Release();
 		m_deviceContext = 0;
 	}
 
-	if (m_device)
-	{
+	if (m_device){
 		m_device->Release();
 		m_device = 0;
 	}
 
-	if (m_swapChain)
-	{
+	if (m_swapChain){
 		m_swapChain->Release();
 		m_swapChain = 0;
 	}
@@ -546,32 +530,27 @@ void D3DClass::EndScene()
 }
 
 // get Direct3D device
-ID3D11Device* D3DClass::GetDevice()
-{
+ID3D11Device* D3DClass::GetDevice(){
 	return m_device;
 }
 
 // get Direct3D device context
-ID3D11DeviceContext* D3DClass::GetDeviceContext()
-{
+ID3D11DeviceContext* D3DClass::GetDeviceContext(){
 	return m_deviceContext;
 }
 
 // get projection matrix
-void D3DClass::GetProjectionMatrix(XMMATRIX& projectionMatrix)
-{
+void D3DClass::GetProjectionMatrix(XMMATRIX& projectionMatrix){
 	projectionMatrix = m_projectionMatrix;
 }
 
 // get world matrix
-void D3DClass::GetWorldMatrix(XMMATRIX& worldMatrix)
-{
+void D3DClass::GetWorldMatrix(XMMATRIX& worldMatrix){
 	worldMatrix = m_worldMatrix;
 }
 
 // get orthographic matrix
-void D3DClass::GetOrthoMatrix(XMMATRIX& orthoMatrix)
-{
+void D3DClass::GetOrthoMatrix(XMMATRIX& orthoMatrix){
 	orthoMatrix = m_orthoMatrix;
 }
 
@@ -609,6 +588,26 @@ void D3DClass::TurnAlphaBlendingOff(){
 
 	// Turn off the alpha blending.
 	m_deviceContext->OMSetBlendState(m_alphaDisableBlendingState, blendFactor, 0xffffffff);
+}
+
+void D3DClass::TurnOnCulling(){
+	// Set the culling rasterizer state.
+	m_deviceContext->RSSetState(m_rasterState);
+}
+
+void D3DClass::TurnOffCulling(){
+	// Set the no back face culling rasterizer state.
+	m_deviceContext->RSSetState(m_rasterStateNoCulling);
+}
+
+void D3DClass::SetBackBufferRenderTarget(){
+	// Bind the render target view and depth stencil buffer to the output render pipeline.
+	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
+}
+
+void D3DClass::ResetViewport(){
+	// Set the viewport.
+	m_deviceContext->RSSetViewports(1, &m_viewport);
 }
 
 // get video card info
